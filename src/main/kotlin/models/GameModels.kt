@@ -21,12 +21,12 @@ data class GameState(
     var communityCards: List<SkillCard> = emptyList(),
     var pot: Int = 0,
     var round: Int = 0,
-    var phase: GamePhase = GamePhase.LOBBY,
+    var phase: GamePhase = GamePhase.TITLE,
     var communityCardsRevealed: Int = 0,
     var currentUserIndex: Int = 0
 )
 
-enum class GamePhase { LOBBY, PRE_FLOP, FLOP, TURN, RIVER, SHOWDOWN, GAME_OVER }
+enum class GamePhase { TITLE, LOBBY, PRE_FLOP, FLOP, TURN, RIVER, SHOWDOWN, GAME_OVER }
 
 sealed class HandRank(val displayName: String, val value: Int) : Comparable<HandRank> {
     object HighCard : HandRank("The Nepo Baby", 1)
@@ -47,3 +47,4 @@ data class GeminiResponse(
     val deck: List<SkillCard>,
     val holeCards: Map<String, List<Int>>
 )
+dd
