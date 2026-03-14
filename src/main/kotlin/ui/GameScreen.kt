@@ -38,11 +38,20 @@ fun GameScreen(gameState: GameState, onHumanAction: (PlayerAction) -> Unit, onSh
     val communityRowH = 140.dp
 
     Box(modifier = Modifier.fillMaxSize()) {
-        Image(
-            painter = painterResource("background_room_test.png"),
-            contentDescription = null,
-            modifier = Modifier.fillMaxSize()
-        )
+        // Background image with fallback
+        val backgroundPainter = runCatching {
+            painterResource("background_room_test.png")
+        }.getOrNull()
+
+        if (backgroundPainter != null) {
+            Image(
+                painter = backgroundPainter,
+                contentDescription = null,
+                modifier = Modifier.fillMaxSize()
+            )
+        } else {
+            Box(modifier = Modifier.fillMaxSize().background(Color(0xFF35654D)))
+        }
 
         Column(
             modifier = Modifier
