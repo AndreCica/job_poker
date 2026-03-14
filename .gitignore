@@ -1,0 +1,17 @@
+# Gradle
+.gradle
+**/build/
+!src/**/build/
+
+# IntelliJ IDEA
+.idea
+*.iws
+*.iml
+*.ipr
+
+# Mac
+.DS_Store
+
+# Misc
+*.class
+*.log
