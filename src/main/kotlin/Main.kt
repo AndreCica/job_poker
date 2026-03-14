@@ -10,6 +10,7 @@ import models.Player
 import ui.GameScreen
 import ui.LobbyScreen
 import ui.ShowdownScreen
+import ui.TitleScreen
 
 fun main() = application {
     Window(onCloseRequest = ::exitApplication, title = "The Interview Table") {
@@ -20,13 +21,15 @@ fun main() = application {
             val apiClient = remember { GeminiClient() }
 
             when (gameState.phase) {
+                GamePhase.TITLE -> {
+                    TitleScreen(onStart = { gameEngine.startFromTitle() })
+                }
                 GamePhase.LOBBY -> {
                     LobbyScreen(
                         onStartGame = { jobDescription, userResume, npcResumes ->
                             scope.launch {
                                 val resumes = listOf(userResume) + npcResumes
                                 val response = apiClient.generateGameData(jobDescription, resumes)
-                                
                                 val players = listOf(
                                     Player(name = "You", isHuman = true),
                                     Player(name = "Chad (Overconfident)", isHuman = false),
@@ -45,7 +48,6 @@ fun main() = application {
                     )
                 }
                 GamePhase.GAME_OVER -> {
-                    // Could add a game over screen, or just redirect to lobby
                     LobbyScreen(
                         onStartGame = { jobDescription, userResume, npcResumes ->
                             scope.launch {

@@ -26,3 +26,7 @@ compose.desktop {
         mainClass = "MainKt"
     }
 }
+
+if (JavaVersion.current() >= JavaVersion.VERSION_23) {
+    error("This project requires Java 21. Current version: ${JavaVersion.current()}")
+}
