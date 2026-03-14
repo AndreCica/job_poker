@@ -9,8 +9,11 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import game.PlayerAction
 import models.GamePhase
 import models.GameState
@@ -26,67 +29,83 @@ fun GameScreen(gameState: GameState, onHumanAction: (PlayerAction) -> Unit) {
         else -> ""
     }
 
-    Column(
-        modifier = Modifier.fillMaxSize().background(Color(0xFF35654D)).padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.SpaceBetween
+    BoxWithConstraints(
+        modifier = Modifier.fillMaxSize().background(Color(0xFF35654D)).padding(16.dp)
     ) {
-        // Phase and Pot Info
-        Text(phaseLabel, style = MaterialTheme.typography.h5, color = Color.White)
-        Text("Pot: ${gameState.pot} | Round: ${gameState.round}/10", color = Color.White, style = MaterialTheme.typography.h6)
+        // Scale factor based on available height (baseline 600dp)
+        val scale = (maxHeight / 600.dp).coerceIn(0.8f, 2.0f)
+        val npcCardW = (60 * scale).dp
+        val npcCardH = (90 * scale).dp
+        val communityCardW = (80 * scale).dp
+        val communityCardH = (120 * scale).dp
+        val communityRowH = (120 * scale).dp
 
-        // NPCs
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceEvenly
+        Column(
+            modifier = Modifier.fillMaxSize(),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.SpaceBetween
         ) {
-            gameState.players.forEachIndexed { index, player ->
-                if (!player.isHuman) {
-                    PlayerSection(
-                        name = player.name,
-                        chips = player.chips,
-                        hasFolded = player.hasFolded,
-                        cards = if (player.hasFolded) emptyList() else listOf(null, null),
-                        isActive = index == gameState.currentUserIndex
-                    )
+            // Phase and Pot Info
+            Text(phaseLabel, style = MaterialTheme.typography.h5, color = Color.White)
+            Text("Pot: ${gameState.pot} | Round: ${gameState.round}/10", color = Color.White, style = MaterialTheme.typography.h6)
+
+            // NPCs
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceEvenly
+            ) {
+                gameState.players.forEachIndexed { index, player ->
+                    if (!player.isHuman) {
+                        PlayerSection(
+                            name = player.name,
+                            chips = player.chips,
+                            hasFolded = player.hasFolded,
+                            cards = if (player.hasFolded) emptyList() else listOf(null, null),
+                            isActive = index == gameState.currentUserIndex,
+                            cardWidth = npcCardW,
+                            cardHeight = npcCardH
+                        )
+                    }
                 }
             }
-        }
 
-        // Community Cards
-        Row(
-            horizontalArrangement = Arrangement.Center,
-            modifier = Modifier.fillMaxWidth().height(120.dp)
-        ) {
-            gameState.communityCards.forEach { card ->
-                PlayingCard(card)
-                Spacer(modifier = Modifier.width(8.dp))
+            // Community Cards
+            Row(
+                horizontalArrangement = Arrangement.Center,
+                modifier = Modifier.fillMaxWidth().height(communityRowH)
+            ) {
+                gameState.communityCards.forEach { card ->
+                    PlayingCard(card, modifier = Modifier.size(communityCardW, communityCardH))
+                    Spacer(modifier = Modifier.width(8.dp))
+                }
             }
-        }
 
-        // Human Player
-        val humanIndex = gameState.players.indexOfFirst { it.isHuman }
-        val human = gameState.players[humanIndex]
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            PlayerSection(
-                name = "You",
-                chips = human.chips,
-                hasFolded = human.hasFolded,
-                cards = human.holeCards,
-                isActive = humanIndex == gameState.currentUserIndex
-            )
-            Spacer(modifier = Modifier.height(16.dp))
-            Row {
-                Button(onClick = { onHumanAction(PlayerAction.FOLD) }, enabled = !human.hasFolded) {
-                    Text("Fold")
-                }
-                Spacer(modifier = Modifier.width(8.dp))
-                Button(onClick = { onHumanAction(PlayerAction.CHECK_CALL) }, enabled = !human.hasFolded) {
-                    Text("Check")
-                }
-                Spacer(modifier = Modifier.width(8.dp))
-                Button(onClick = { onHumanAction(PlayerAction.BET) }, enabled = !human.hasFolded && human.chips >= 10000) {
-                    Text("Bet 10k")
+            // Human Player
+            val humanIndex = gameState.players.indexOfFirst { it.isHuman }
+            val human = gameState.players[humanIndex]
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                PlayerSection(
+                    name = "You",
+                    chips = human.chips,
+                    hasFolded = human.hasFolded,
+                    cards = human.holeCards,
+                    isActive = humanIndex == gameState.currentUserIndex,
+                    cardWidth = npcCardW,
+                    cardHeight = npcCardH
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+                Row {
+                    Button(onClick = { onHumanAction(PlayerAction.FOLD) }, enabled = !human.hasFolded) {
+                        Text("Fold")
+                    }
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Button(onClick = { onHumanAction(PlayerAction.CHECK_CALL) }, enabled = !human.hasFolded) {
+                        Text("Check")
+                    }
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Button(onClick = { onHumanAction(PlayerAction.BET) }, enabled = !human.hasFolded && human.chips >= 10000) {
+                        Text("Bet 10k")
+                    }
                 }
             }
         }
@@ -94,7 +113,15 @@ fun GameScreen(gameState: GameState, onHumanAction: (PlayerAction) -> Unit) {
 }
 
 @Composable
-fun PlayerSection(name: String, chips: Int, hasFolded: Boolean, cards: List<SkillCard?>, isActive: Boolean = false) {
+fun PlayerSection(
+    name: String,
+    chips: Int,
+    hasFolded: Boolean,
+    cards: List<SkillCard?>,
+    isActive: Boolean = false,
+    cardWidth: Dp = 60.dp,
+    cardHeight: Dp = 90.dp
+) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier.padding(4.dp)
@@ -110,12 +137,12 @@ fun PlayerSection(name: String, chips: Int, hasFolded: Boolean, cards: List<Skil
                         val cardBorder = if (isActive) Modifier.border(4.dp, Color(0xFFFFD700), RoundedCornerShape(4.dp))
                                          else Modifier.border(1.dp, Color.Black, RoundedCornerShape(4.dp))
                         Surface(
-                            modifier = Modifier.size(60.dp, 90.dp).padding(2.dp).then(cardBorder),
+                            modifier = Modifier.size(cardWidth, cardHeight).padding(2.dp).then(cardBorder),
                             shape = RoundedCornerShape(4.dp),
                             color = Color(0xFF1E3A8A)
                         ) {}
                     } else {
-                        PlayingCard(card, modifier = Modifier.size(60.dp, 90.dp), isActive = isActive)
+                        PlayingCard(card, modifier = Modifier.size(cardWidth, cardHeight), isActive = isActive)
                     }
                 }
             }
