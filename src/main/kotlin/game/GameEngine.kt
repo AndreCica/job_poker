@@ -79,7 +79,8 @@ class GameEngine(private val coroutineScope: CoroutineScope) {
             val npc = currentPlayers[i]
             if (npc.hasFolded) continue
 
-            // Simulate thinking
+            // Set active player and simulate thinking
+            gameState.value = gameState.value.copy(currentUserIndex = i)
             delay(800)
 
             val actionChoice = Random.nextInt(3)
@@ -157,7 +158,8 @@ class GameEngine(private val coroutineScope: CoroutineScope) {
         gameState.value = state.copy(
             phase = nextPhase,
             communityCards = newCommunityCards,
-            communityCardsRevealed = cardsRevealed
+            communityCardsRevealed = cardsRevealed,
+            currentUserIndex = 0
         )
     }
 

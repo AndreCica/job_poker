@@ -40,13 +40,16 @@ fun GameScreen(gameState: GameState, onHumanAction: (PlayerAction) -> Unit) {
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
-            gameState.players.filter { !it.isHuman }.forEach { npc ->
-                PlayerSection(
-                    name = npc.name,
-                    chips = npc.chips,
-                    hasFolded = npc.hasFolded,
-                    cards = if (npc.hasFolded) emptyList() else listOf(null, null) // Face down cards
-                )
+            gameState.players.forEachIndexed { index, player ->
+                if (!player.isHuman) {
+                    PlayerSection(
+                        name = player.name,
+                        chips = player.chips,
+                        hasFolded = player.hasFolded,
+                        cards = if (player.hasFolded) emptyList() else listOf(null, null),
+                        isActive = index == gameState.currentUserIndex
+                    )
+                }
             }
         }
 
@@ -62,13 +65,15 @@ fun GameScreen(gameState: GameState, onHumanAction: (PlayerAction) -> Unit) {
         }
 
         // Human Player
-        val human = gameState.players.first { it.isHuman }
+        val humanIndex = gameState.players.indexOfFirst { it.isHuman }
+        val human = gameState.players[humanIndex]
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             PlayerSection(
                 name = "You",
                 chips = human.chips,
                 hasFolded = human.hasFolded,
-                cards = human.holeCards
+                cards = human.holeCards,
+                isActive = humanIndex == gameState.currentUserIndex
             )
             Spacer(modifier = Modifier.height(16.dp))
             Row {
@@ -89,9 +94,12 @@ fun GameScreen(gameState: GameState, onHumanAction: (PlayerAction) -> Unit) {
 }
 
 @Composable
-fun PlayerSection(name: String, chips: Int, hasFolded: Boolean, cards: List<SkillCard?>) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(4.dp)) {
-        Text(name, color = Color.White, style = MaterialTheme.typography.subtitle1)
+fun PlayerSection(name: String, chips: Int, hasFolded: Boolean, cards: List<SkillCard?>, isActive: Boolean = false) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier.padding(4.dp)
+    ) {
+        Text(name, color = if (isActive) Color(0xFFFFD700) else Color.White, style = MaterialTheme.typography.subtitle1)
         Text("Chips: $chips", color = Color.LightGray)
         if (hasFolded) {
             Text("FOLDED", color = Color.Red, style = MaterialTheme.typography.h6)
@@ -99,13 +107,15 @@ fun PlayerSection(name: String, chips: Int, hasFolded: Boolean, cards: List<Skil
             Row {
                 cards.forEach { card ->
                     if (card == null) {
+                        val cardBorder = if (isActive) Modifier.border(4.dp, Color(0xFFFFD700), RoundedCornerShape(4.dp))
+                                         else Modifier.border(1.dp, Color.Black, RoundedCornerShape(4.dp))
                         Surface(
-                            modifier = Modifier.size(60.dp, 90.dp).padding(2.dp).border(1.dp, Color.Black, RoundedCornerShape(4.dp)),
+                            modifier = Modifier.size(60.dp, 90.dp).padding(2.dp).then(cardBorder),
                             shape = RoundedCornerShape(4.dp),
-                            color = Color(0xFF1E3A8A) // back pattern color
+                            color = Color(0xFF1E3A8A)
                         ) {}
                     } else {
-                        PlayingCard(card, modifier = Modifier.size(60.dp, 90.dp))
+                        PlayingCard(card, modifier = Modifier.size(60.dp, 90.dp), isActive = isActive)
                     }
                 }
             }
@@ -114,9 +124,12 @@ fun PlayerSection(name: String, chips: Int, hasFolded: Boolean, cards: List<Skil
 }
 
 @Composable
-fun PlayingCard(card: SkillCard, modifier: Modifier = Modifier.size(80.dp, 120.dp)) {
+fun PlayingCard(card: SkillCard, modifier: Modifier = Modifier.size(80.dp, 120.dp), isActive: Boolean = false) {
+    val borderColor = if (isActive) Color(0xFFFFD700) else Color.Black
+    val borderWidth = if (isActive) 4.dp else 1.dp
+
     Surface(
-        modifier = modifier.padding(2.dp).border(1.dp, Color.Black, RoundedCornerShape(8.dp)),
+        modifier = modifier.padding(2.dp).border(borderWidth, borderColor, RoundedCornerShape(8.dp)),
         shape = RoundedCornerShape(8.dp),
         color = Color.White
     ) {
