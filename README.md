@@ -1,7 +1,13 @@
-#job_poker
+# job_poker
 
-to run you go on the directory:  
+## Prerequisites
+- Java 21 (other versions are not supported)
+  - Arch Linux: `sudo pacman -S jdk21-openjdk && sudo archlinux-java set java-21-openjdk`
+  - Others: https://adoptium.net
 
-/.gemini/antigravity/scratch/interview-table  
+## Build & Run
+To run you go into the project directory:
+
+/path/to/your/project/directory/
 
 and run ./gradlew run
