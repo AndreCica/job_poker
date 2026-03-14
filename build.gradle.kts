@@ -18,6 +18,7 @@ dependencies {
     implementation("io.ktor:ktor-serialization-kotlinx-json:2.3.9")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-swing:1.7.3")
+    implementation("org.apache.pdfbox:pdfbox:2.0.30")
 }
 
 compose.desktop {
