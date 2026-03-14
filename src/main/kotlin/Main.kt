@@ -11,6 +11,8 @@ import ui.GameScreen
 import ui.LobbyScreen
 import ui.ShowdownScreen
 import ui.TitleScreen
+import androidx.compose.foundation.layout.Box
+import ui.LogScreen
 
 fun main() = application {
     Window(onCloseRequest = ::exitApplication, title = "The Interview Table") {
@@ -19,55 +21,68 @@ fun main() = application {
             val gameEngine = remember { GameEngine(scope) }
             val gameState by gameEngine.gameState.collectAsState()
             val apiClient = remember { GeminiClient() }
+            var isLogVisible by remember { mutableStateOf(false) }
 
-            when (gameState.phase) {
-                GamePhase.TITLE -> {
-                    TitleScreen(onStart = { gameEngine.startFromTitle() })
-                }
-                GamePhase.LOBBY -> {
-                    LobbyScreen(
-                        onStartGame = { jobDescription, userResume, npcResumes ->
-                            scope.launch {
-                                val resumes = listOf(userResume) + npcResumes
-                                val response = apiClient.generateGameData(jobDescription, resumes)
-                                val players = listOf(
-                                    Player(name = "You", isHuman = true),
-                                    Player(name = "Chad (Overconfident)", isHuman = false),
-                                    Player(name = "Priya (Methodical)", isHuman = false),
-                                    Player(name = "Kevin (Desperate)", isHuman = false)
-                                )
-                                gameEngine.startGame(players, response.deck, response.holeCards)
+            Box {
+                when (gameState.phase) {
+                    GamePhase.TITLE -> {
+                        TitleScreen(onStart = { gameEngine.startFromTitle() })
+                    }
+                    GamePhase.LOBBY -> {
+                        LobbyScreen(
+                            onStartGame = { jobDescription, userResume, npcResumes ->
+                                scope.launch {
+                                    val resumes = listOf(userResume) + npcResumes
+                                    val response = apiClient.generateGameData(jobDescription, resumes)
+                                    val players = listOf(
+                                        Player(name = "You", isHuman = true),
+                                        Player(name = "Chad (Overconfident)", isHuman = false),
+                                        Player(name = "Priya (Methodical)", isHuman = false),
+                                        Player(name = "Kevin (Desperate)", isHuman = false)
+                                    )
+                                    gameEngine.startGame(players, response.deck, response.holeCards)
+                                }
                             }
-                        }
-                    )
-                }
-                GamePhase.SHOWDOWN -> {
-                    ShowdownScreen(
-                        gameState = gameState,
-                        onNextRound = { gameEngine.nextRound() }
-                    )
-                }
-                GamePhase.GAME_OVER -> {
-                    LobbyScreen(
-                        onStartGame = { jobDescription, userResume, npcResumes ->
-                            scope.launch {
-                                val resumes = listOf(userResume) + npcResumes
-                                val response = apiClient.generateGameData(jobDescription, resumes)
-                                val players = listOf(
-                                    Player(name = "You", isHuman = true),
-                                    Player(name = "Chad (Overconfident)", isHuman = false),
-                                    Player(name = "Priya (Methodical)", isHuman = false),
-                                    Player(name = "Kevin (Desperate)", isHuman = false)
-                                )
-                                gameEngine.startGame(players, response.deck, response.holeCards)
+                        )
+                    }
+                    GamePhase.SHOWDOWN -> {
+                        ShowdownScreen(
+                            gameState = gameState,
+                            onNextRound = { gameEngine.nextRound() },
+                            onShowLog = { isLogVisible = true }
+                        )
+                    }
+                    GamePhase.GAME_OVER -> {
+                        // Could add a game over screen, or just redirect to lobby
+                        LobbyScreen(
+                            onStartGame = { jobDescription, userResume, npcResumes ->
+                                scope.launch {
+                                    val resumes = listOf(userResume) + npcResumes
+                                    val response = apiClient.generateGameData(jobDescription, resumes)
+                                    val players = listOf(
+                                        Player(name = "You", isHuman = true),
+                                        Player(name = "Chad (Overconfident)", isHuman = false),
+                                        Player(name = "Priya (Methodical)", isHuman = false),
+                                        Player(name = "Kevin (Desperate)", isHuman = false)
+                                    )
+                                    gameEngine.startGame(players, response.deck, response.holeCards)
+                                }
                             }
-                        }
-                    )
+                        )
+                    }
+                    else -> { // This is for GamePhase.GAME
+                        GameScreen(
+                            gameState = gameState,
+                            onHumanAction = { action -> gameEngine.humanAction(action) },
+                            onShowLog = { isLogVisible = true }
+                        )
+                    }
                 }
-                else -> {
-                    GameScreen(
-                        gameState = gameState,
-                        onHumanAction = { action -> gameEngine.humanAction(action) }
+
+                if (isLogVisible) {
+                    LogScreen(
+                        logs = gameState.logs,
+                        onClose = { isLogVisible = false }
                     )
                 }
             }

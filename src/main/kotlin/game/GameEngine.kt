@@ -12,11 +12,17 @@ enum class PlayerAction {
 }
 
 class GameEngine(private val coroutineScope: CoroutineScope) {
-        fun startFromTitle() {
-            gameState.value = gameState.value.copy(phase = GamePhase.LOBBY)
-        }
+    fun startFromTitle() {
+        gameState.value = gameState.value.copy(phase = GamePhase.LOBBY)
+    }
     val gameState = MutableStateFlow(GameState(players = emptyList()))
     private var deck: List<SkillCard> = emptyList()
+
+    private fun logAction(message: String) {
+        val currentLogs = gameState.value.logs.toMutableList()
+        currentLogs.add(message)
+        gameState.value = gameState.value.copy(logs = currentLogs)
+    }
 
     fun startGame(players: List<Player>, generatedDeck: List<SkillCard>, holeCardsIndices: Map<String, List<Int>>) {
         deck = generatedDeck.toMutableList()
@@ -30,14 +36,19 @@ class GameEngine(private val coroutineScope: CoroutineScope) {
         val dealtCards = dealtPlayers.flatMap { it.holeCards }.toSet()
         deck = deck.filterNot { it in dealtCards }
 
+        // Deal 2 community cards face-up at game start
+        val initialCommunity = deck.take(2)
+        deck = deck.drop(2)
+
         gameState.value = GameState(
             players = dealtPlayers,
-            communityCards = emptyList(),
+            communityCards = initialCommunity,
             pot = 0,
             round = 1,
             phase = GamePhase.PRE_FLOP,
-            communityCardsRevealed = 0,
-            currentUserIndex = 0
+            communityCardsRevealed = 2,
+            currentUserIndex = 0,
+            logs = listOf("Game started! Dealing hole cards.", "Community cards: ${initialCommunity.joinToString { it.title }}")
         )
     }
 
@@ -49,9 +60,10 @@ class GameEngine(private val coroutineScope: CoroutineScope) {
         when (action) {
             PlayerAction.FOLD -> {
                 currentPlayers[0] = human.copy(hasFolded = true)
+                logAction("You folded.")
             }
             PlayerAction.CHECK_CALL -> {
-                // simple check/call, no additional chips subtracted for simplicity unless needed
+                logAction("You checked/called.")
             }
             PlayerAction.BET -> {
                 val betAmount = 10_000
@@ -61,6 +73,7 @@ class GameEngine(private val coroutineScope: CoroutineScope) {
                         currentBet = human.currentBet + betAmount
                     )
                     gameState.value = state.copy(pot = state.pot + betAmount, players = currentPlayers)
+                    logAction("You bet 10,000 chips.")
                 }
             }
         }
@@ -82,16 +95,18 @@ class GameEngine(private val coroutineScope: CoroutineScope) {
             val npc = currentPlayers[i]
             if (npc.hasFolded) continue
 
-            // Simulate thinking
+            // Set active player and simulate thinking
+            gameState.value = gameState.value.copy(currentUserIndex = i)
             delay(800)
 
             val actionChoice = Random.nextInt(3)
             when (actionChoice) {
                 0 -> { // Fold
                     currentPlayers[i] = npc.copy(hasFolded = true)
+                    logAction("${npc.name} folded.")
                 }
                 1 -> { // Check/Call
-                    // Do nothing to chips
+                    logAction("${npc.name} checked/called.")
                 }
                 2 -> { // Bet
                     val betAmount = 10_000
@@ -101,6 +116,7 @@ class GameEngine(private val coroutineScope: CoroutineScope) {
                             currentBet = npc.currentBet + betAmount
                         )
                         currentPot += betAmount
+                        logAction("${npc.name} bet 10,000 chips.")
                     }
                 }
             }
@@ -135,22 +151,28 @@ class GameEngine(private val coroutineScope: CoroutineScope) {
         
         when (nextPhase) {
             GamePhase.FLOP -> {
-                newCommunityCards.addAll(deck.take(3))
-                deck = deck.drop(3)
+                val card = deck.take(1).first()
+                newCommunityCards.add(card)
+                deck = deck.drop(1)
                 cardsRevealed = 3
+                logAction("Dealing Flop: ${card.title}")
             }
             GamePhase.TURN -> {
-                newCommunityCards.addAll(deck.take(1))
+                val card = deck.take(1).first()
+                newCommunityCards.add(card)
                 deck = deck.drop(1)
                 cardsRevealed = 4
+                logAction("Dealing Turn: ${card.title}")
             }
             GamePhase.RIVER -> {
-                newCommunityCards.addAll(deck.take(1))
+                val card = deck.take(1).first()
+                newCommunityCards.add(card)
                 deck = deck.drop(1)
                 cardsRevealed = 5
+                logAction("Dealing River: ${card.title}")
             }
             GamePhase.SHOWDOWN -> {
-                // Showdown logic handled by UI mostly, but we set winners here
+                logAction("Entering Showdown.")
                 endRound()
                 return
             }
@@ -160,7 +182,8 @@ class GameEngine(private val coroutineScope: CoroutineScope) {
         gameState.value = state.copy(
             phase = nextPhase,
             communityCards = newCommunityCards,
-            communityCardsRevealed = cardsRevealed
+            communityCardsRevealed = cardsRevealed,
+            currentUserIndex = 0
         )
     }
 
@@ -172,7 +195,9 @@ class GameEngine(private val coroutineScope: CoroutineScope) {
         
         val winnerIndex = players.indexOfFirst { it.name == winner.name }
         if (winnerIndex >= 0) {
+            val winnerName = players[winnerIndex].name
             players[winnerIndex] = players[winnerIndex].copy(chips = players[winnerIndex].chips + state.pot)
+            logAction("$winnerName wins the pot of ${state.pot} chips!")
         }
 
         gameState.value = state.copy(
@@ -196,7 +221,8 @@ class GameEngine(private val coroutineScope: CoroutineScope) {
             communityCardsRevealed = 0,
             pot = 0,
             round = state.round + 1,
-            phase = GamePhase.LOBBY // Should probably trigger another card deal, but to save API calls in a real game we might just shuffle existing deck.
+            phase = GamePhase.LOBBY,
+            logs = state.logs + "Starting Round ${state.round + 1}"
         )
     }
 

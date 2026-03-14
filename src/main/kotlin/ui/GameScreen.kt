@@ -12,14 +12,16 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import game.PlayerAction
 import models.GamePhase
 import models.GameState
 import models.SkillCard
 
 @Composable
-fun GameScreen(gameState: GameState, onHumanAction: (PlayerAction) -> Unit) {
+fun GameScreen(gameState: GameState, onHumanAction: (PlayerAction) -> Unit, onShowLog: () -> Unit) {
     val phaseLabel = when (gameState.phase) {
         GamePhase.PRE_FLOP -> "Pre-Interview: Check your skills"
         GamePhase.FLOP -> "Tech Screen: The Flop"
@@ -27,6 +29,13 @@ fun GameScreen(gameState: GameState, onHumanAction: (PlayerAction) -> Unit) {
         GamePhase.RIVER -> "Final Interview: The River"
         else -> ""
     }
+
+    // Card sizing (can be tweaked for your pixel art assets)
+    val npcCardW = 60.dp
+    val npcCardH = 90.dp
+    val communityCardW = 80.dp
+    val communityCardH = 120.dp
+    val communityRowH = 140.dp
 
     Box(modifier = Modifier.fillMaxSize()) {
         Image(
@@ -43,7 +52,12 @@ fun GameScreen(gameState: GameState, onHumanAction: (PlayerAction) -> Unit) {
             verticalArrangement = Arrangement.SpaceBetween
         ) {
             // Phase and Pot Info
-            Text(phaseLabel, style = MaterialTheme.typography.h5, color = Color.White)
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                Text(phaseLabel, style = MaterialTheme.typography.h5, color = Color.White)
+                TextButton(onClick = onShowLog) {
+                    Text("Log", color = Color.White)
+                }
+            }
             Text("Pot: ${gameState.pot} | Round: ${gameState.round}/10", color = Color.White, style = MaterialTheme.typography.h6)
 
             // NPCs
@@ -51,35 +65,46 @@ fun GameScreen(gameState: GameState, onHumanAction: (PlayerAction) -> Unit) {
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceEvenly
             ) {
-                gameState.players.filter { !it.isHuman }.forEach { npc ->
-                    PlayerSection(
-                        name = npc.name,
-                        chips = npc.chips,
-                        hasFolded = npc.hasFolded,
-                        cards = if (npc.hasFolded) emptyList() else listOf(null, null) // Face down cards
-                    )
+                gameState.players.forEachIndexed { index, player ->
+                    if (!player.isHuman) {
+                        PlayerSection(
+                            name = player.name,
+                            chips = player.chips,
+                            currentBet = player.currentBet,
+                            hasFolded = player.hasFolded,
+                            cards = if (player.hasFolded) emptyList() else listOf(null, null),
+                            isActive = index == gameState.currentUserIndex,
+                            cardWidth = npcCardW,
+                            cardHeight = npcCardH
+                        )
+                    }
                 }
             }
 
             // Community Cards
             Row(
                 horizontalArrangement = Arrangement.Center,
-                modifier = Modifier.fillMaxWidth().height(120.dp)
+                modifier = Modifier.fillMaxWidth().height(communityRowH)
             ) {
                 gameState.communityCards.forEach { card ->
-                    PlayingCard(card)
+                    PlayingCard(card, modifier = Modifier.size(communityCardW, communityCardH))
                     Spacer(modifier = Modifier.width(8.dp))
                 }
             }
 
             // Human Player
-            val human = gameState.players.first { it.isHuman }
+            val humanIndex = gameState.players.indexOfFirst { it.isHuman }
+            val human = gameState.players[humanIndex]
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 PlayerSection(
                     name = "You",
                     chips = human.chips,
+                    currentBet = human.currentBet,
                     hasFolded = human.hasFolded,
-                    cards = human.holeCards
+                    cards = human.holeCards,
+                    isActive = humanIndex == gameState.currentUserIndex,
+                    cardWidth = npcCardW,
+                    cardHeight = npcCardH
                 )
                 Spacer(modifier = Modifier.height(16.dp))
                 Row {
@@ -101,23 +126,38 @@ fun GameScreen(gameState: GameState, onHumanAction: (PlayerAction) -> Unit) {
 }
 
 @Composable
-fun PlayerSection(name: String, chips: Int, hasFolded: Boolean, cards: List<SkillCard?>) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(4.dp)) {
-        Text(name, color = Color.White, style = MaterialTheme.typography.subtitle1)
+fun PlayerSection(
+    name: String,
+    chips: Int,
+    currentBet: Int,
+    hasFolded: Boolean,
+    cards: List<SkillCard?>,
+    isActive: Boolean = false,
+    cardWidth: Dp = 60.dp,
+    cardHeight: Dp = 90.dp
+) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier.padding(4.dp)
+    ) {
+        Text(name, color = if (isActive) Color(0xFFFFD700) else Color.White, style = MaterialTheme.typography.subtitle1)
         Text("Chips: $chips", color = Color.LightGray)
+        Text("Bet: $currentBet", color = if (currentBet > 0) Color.Yellow else Color.Gray, style = MaterialTheme.typography.caption)
         if (hasFolded) {
             Text("FOLDED", color = Color.Red, style = MaterialTheme.typography.h6)
         } else {
             Row {
                 cards.forEach { card ->
                     if (card == null) {
+                        val cardBorder = if (isActive) Modifier.border(4.dp, Color(0xFFFFD700), RoundedCornerShape(4.dp))
+                                         else Modifier.border(1.dp, Color.Black, RoundedCornerShape(4.dp))
                         Surface(
-                            modifier = Modifier.size(60.dp, 90.dp).padding(2.dp).border(1.dp, Color.Black, RoundedCornerShape(4.dp)),
+                            modifier = Modifier.size(cardWidth, cardHeight).padding(2.dp).then(cardBorder),
                             shape = RoundedCornerShape(4.dp),
-                            color = Color(0xFF1E3A8A) // back pattern color
+                            color = Color(0xFF1E3A8A)
                         ) {}
                     } else {
-                        PlayingCard(card, modifier = Modifier.size(60.dp, 90.dp))
+                        PlayingCard(card, modifier = Modifier.size(cardWidth, cardHeight), isActive = isActive)
                     }
                 }
             }
@@ -126,9 +166,12 @@ fun PlayerSection(name: String, chips: Int, hasFolded: Boolean, cards: List<Skil
 }
 
 @Composable
-fun PlayingCard(card: SkillCard, modifier: Modifier = Modifier.size(80.dp, 120.dp)) {
+fun PlayingCard(card: SkillCard, modifier: Modifier = Modifier.size(80.dp, 120.dp), isActive: Boolean = false) {
+    val borderColor = if (isActive) Color(0xFFFFD700) else Color.Black
+    val borderWidth = if (isActive) 4.dp else 1.dp
+
     Surface(
-        modifier = modifier.padding(2.dp).border(1.dp, Color.Black, RoundedCornerShape(8.dp)),
+        modifier = modifier.padding(2.dp).border(borderWidth, borderColor, RoundedCornerShape(8.dp)),
         shape = RoundedCornerShape(8.dp),
         color = Color.White
     ) {
