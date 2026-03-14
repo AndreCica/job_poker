@@ -61,7 +61,10 @@ fun ShowdownScreen(gameState: GameState, onNextRound: () -> Unit) {
         Spacer(modifier = Modifier.height(24.dp))
         
         if (winners.isNotEmpty()) {
-            Text("WINNER: ${winners.joinToString { it.name }} wins ${gameState.pot} chips!", color = Color.Yellow, style = MaterialTheme.typography.h5)
+            if (it.name == "You") {Text("CONGRATS! You win ${gameState.pot} chips!", color = Color.Green, style = MaterialTheme.typography.h5)}
+            else {
+                Text("WINNER: ${winners.joinToString { it.name }} wins ${gameState.pot} chips!", color = Color.Yellow, style = MaterialTheme.typography.h5)
+            }
         }
 
         Spacer(modifier = Modifier.height(24.dp))
