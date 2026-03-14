@@ -12,6 +12,9 @@ enum class PlayerAction {
 }
 
 class GameEngine(private val coroutineScope: CoroutineScope) {
+        fun startFromTitle() {
+            gameState.value = gameState.value.copy(phase = GamePhase.LOBBY)
+        }
     val gameState = MutableStateFlow(GameState(players = emptyList()))
     private var deck: List<SkillCard> = emptyList()
 
