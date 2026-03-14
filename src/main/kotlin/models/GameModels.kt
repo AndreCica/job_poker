@@ -47,4 +47,3 @@ data class GeminiResponse(
     val deck: List<SkillCard>,
     val holeCards: Map<String, List<Int>>
 )
-dd

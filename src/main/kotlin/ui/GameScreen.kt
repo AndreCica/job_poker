@@ -1,5 +1,6 @@
 package ui
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
@@ -9,6 +10,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import game.PlayerAction
@@ -26,62 +28,72 @@ fun GameScreen(gameState: GameState, onHumanAction: (PlayerAction) -> Unit) {
         else -> ""
     }
 
-    Column(
-        modifier = Modifier.fillMaxSize().background(Color(0xFF35654D)).padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.SpaceBetween
-    ) {
-        // Phase and Pot Info
-        Text(phaseLabel, style = MaterialTheme.typography.h5, color = Color.White)
-        Text("Pot: ${gameState.pot} | Round: ${gameState.round}/10", color = Color.White, style = MaterialTheme.typography.h6)
+    Box(modifier = Modifier.fillMaxSize()) {
+        Image(
+            painter = painterResource("background_room_test.png"),
+            contentDescription = null,
+            modifier = Modifier.fillMaxSize()
+        )
 
-        // NPCs
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceEvenly
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.SpaceBetween
         ) {
-            gameState.players.filter { !it.isHuman }.forEach { npc ->
+            // Phase and Pot Info
+            Text(phaseLabel, style = MaterialTheme.typography.h5, color = Color.White)
+            Text("Pot: ${gameState.pot} | Round: ${gameState.round}/10", color = Color.White, style = MaterialTheme.typography.h6)
+
+            // NPCs
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceEvenly
+            ) {
+                gameState.players.filter { !it.isHuman }.forEach { npc ->
+                    PlayerSection(
+                        name = npc.name,
+                        chips = npc.chips,
+                        hasFolded = npc.hasFolded,
+                        cards = if (npc.hasFolded) emptyList() else listOf(null, null) // Face down cards
+                    )
+                }
+            }
+
+            // Community Cards
+            Row(
+                horizontalArrangement = Arrangement.Center,
+                modifier = Modifier.fillMaxWidth().height(120.dp)
+            ) {
+                gameState.communityCards.forEach { card ->
+                    PlayingCard(card)
+                    Spacer(modifier = Modifier.width(8.dp))
+                }
+            }
+
+            // Human Player
+            val human = gameState.players.first { it.isHuman }
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 PlayerSection(
-                    name = npc.name,
-                    chips = npc.chips,
-                    hasFolded = npc.hasFolded,
-                    cards = if (npc.hasFolded) emptyList() else listOf(null, null) // Face down cards
+                    name = "You",
+                    chips = human.chips,
+                    hasFolded = human.hasFolded,
+                    cards = human.holeCards
                 )
-            }
-        }
-
-        // Community Cards
-        Row(
-            horizontalArrangement = Arrangement.Center,
-            modifier = Modifier.fillMaxWidth().height(120.dp)
-        ) {
-            gameState.communityCards.forEach { card ->
-                PlayingCard(card)
-                Spacer(modifier = Modifier.width(8.dp))
-            }
-        }
-
-        // Human Player
-        val human = gameState.players.first { it.isHuman }
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            PlayerSection(
-                name = "You",
-                chips = human.chips,
-                hasFolded = human.hasFolded,
-                cards = human.holeCards
-            )
-            Spacer(modifier = Modifier.height(16.dp))
-            Row {
-                Button(onClick = { onHumanAction(PlayerAction.FOLD) }, enabled = !human.hasFolded) {
-                    Text("Fold")
-                }
-                Spacer(modifier = Modifier.width(8.dp))
-                Button(onClick = { onHumanAction(PlayerAction.CHECK_CALL) }, enabled = !human.hasFolded) {
-                    Text("Check")
-                }
-                Spacer(modifier = Modifier.width(8.dp))
-                Button(onClick = { onHumanAction(PlayerAction.BET) }, enabled = !human.hasFolded && human.chips >= 10000) {
-                    Text("Bet 10k")
+                Spacer(modifier = Modifier.height(16.dp))
+                Row {
+                    Button(onClick = { onHumanAction(PlayerAction.FOLD) }, enabled = !human.hasFolded) {
+                        Text("Fold")
+                    }
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Button(onClick = { onHumanAction(PlayerAction.CHECK_CALL) }, enabled = !human.hasFolded) {
+                        Text("Check")
+                    }
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Button(onClick = { onHumanAction(PlayerAction.BET) }, enabled = !human.hasFolded && human.chips >= 10000) {
+                        Text("Bet 10k")
+                    }
                 }
             }
         }
