@@ -20,7 +20,7 @@ import models.GameState
 import models.SkillCard
 
 @Composable
-fun GameScreen(gameState: GameState, onHumanAction: (PlayerAction) -> Unit) {
+fun GameScreen(gameState: GameState, onHumanAction: (PlayerAction) -> Unit, onShowLog: () -> Unit) {
     val phaseLabel = when (gameState.phase) {
         GamePhase.PRE_FLOP -> "Pre-Interview: Check your skills"
         GamePhase.FLOP -> "Tech Screen: The Flop"
@@ -32,6 +32,14 @@ fun GameScreen(gameState: GameState, onHumanAction: (PlayerAction) -> Unit) {
     BoxWithConstraints(
         modifier = Modifier.fillMaxSize().background(Color(0xFF35654D)).padding(16.dp)
     ) {
+        // Log Button
+        IconButton(
+            onClick = onShowLog,
+            modifier = Modifier.align(Alignment.TopStart)
+        ) {
+            Text("📜", style = MaterialTheme.typography.h4)
+        }
+
         // Scale factor based on available height (baseline 600dp)
         val scale = (maxHeight / 600.dp).coerceIn(0.8f, 2.0f)
         val npcCardW = (60 * scale).dp
@@ -46,8 +54,10 @@ fun GameScreen(gameState: GameState, onHumanAction: (PlayerAction) -> Unit) {
             verticalArrangement = Arrangement.SpaceBetween
         ) {
             // Phase and Pot Info
-            Text(phaseLabel, style = MaterialTheme.typography.h5, color = Color.White)
-            Text("Pot: ${gameState.pot} | Round: ${gameState.round}/10", color = Color.White, style = MaterialTheme.typography.h6)
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Text(phaseLabel, style = MaterialTheme.typography.h5, color = Color.White)
+                Text("Pot: ${gameState.pot} | Round: ${gameState.round}/10", color = Color.White, style = MaterialTheme.typography.h6)
+            }
 
             // NPCs
             Row(
@@ -59,6 +69,7 @@ fun GameScreen(gameState: GameState, onHumanAction: (PlayerAction) -> Unit) {
                         PlayerSection(
                             name = player.name,
                             chips = player.chips,
+                            currentBet = player.currentBet,
                             hasFolded = player.hasFolded,
                             cards = if (player.hasFolded) emptyList() else listOf(null, null),
                             isActive = index == gameState.currentUserIndex,
@@ -87,6 +98,7 @@ fun GameScreen(gameState: GameState, onHumanAction: (PlayerAction) -> Unit) {
                 PlayerSection(
                     name = "You",
                     chips = human.chips,
+                    currentBet = human.currentBet,
                     hasFolded = human.hasFolded,
                     cards = human.holeCards,
                     isActive = humanIndex == gameState.currentUserIndex,
@@ -116,6 +128,7 @@ fun GameScreen(gameState: GameState, onHumanAction: (PlayerAction) -> Unit) {
 fun PlayerSection(
     name: String,
     chips: Int,
+    currentBet: Int,
     hasFolded: Boolean,
     cards: List<SkillCard?>,
     isActive: Boolean = false,
@@ -128,6 +141,7 @@ fun PlayerSection(
     ) {
         Text(name, color = if (isActive) Color(0xFFFFD700) else Color.White, style = MaterialTheme.typography.subtitle1)
         Text("Chips: $chips", color = Color.LightGray)
+        Text("Bet: $currentBet", color = if (currentBet > 0) Color.Yellow else Color.Gray, style = MaterialTheme.typography.caption)
         if (hasFolded) {
             Text("FOLDED", color = Color.Red, style = MaterialTheme.typography.h6)
         } else {

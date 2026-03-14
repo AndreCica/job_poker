@@ -23,7 +23,8 @@ data class GameState(
     var round: Int = 0,
     var phase: GamePhase = GamePhase.TITLE,
     var communityCardsRevealed: Int = 0,
-    var currentUserIndex: Int = 0
+    var currentUserIndex: Int = 0,
+    val logs: List<String> = emptyList()
 )
 
 enum class GamePhase { TITLE, LOBBY, PRE_FLOP, FLOP, TURN, RIVER, SHOWDOWN, GAME_OVER }

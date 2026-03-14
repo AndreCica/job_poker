@@ -87,18 +87,33 @@ Strong familiarity with Agile and Waterfall methodologies.
                     modifier = Modifier.fillMaxWidth().weight(1f)
                 )
                 Button(onClick = {
-                    val dialog = FileDialog(frame, "Select Resume PDF", FileDialog.LOAD)
-                    dialog.isVisible = true
-                    val file = dialog.files.firstOrNull()
-                    if (file != null && file.extension.equals("pdf", ignoreCase = true)) {
-                        try {
-                            PDDocument.load(file).use { doc ->
-                                val text = PDFTextStripper().getText(doc)
-                                userResume = text.trim()
+                    try {
+                        val dialog = FileDialog(frame, "Select Resume PDF", FileDialog.LOAD)
+                        dialog.file = "*.pdf" // Hint for some systems
+                        dialog.setFilenameFilter { _, name -> name.lowercase().endsWith(".pdf") }
+                        dialog.isVisible = true
+                        
+                        val selectedFile = dialog.files.firstOrNull()
+                        println("Selected file: ${selectedFile?.absolutePath}")
+                        
+                        if (selectedFile != null) {
+                            if (!selectedFile.exists() || !selectedFile.canRead()) {
+                                println("File exists: ${selectedFile.exists()}, Can read: ${selectedFile.canRead()}")
+                                return@Button
                             }
-                        } catch (e: Exception) {
-                            // Optionally show error
+                            
+                            PDDocument.load(selectedFile).use { doc ->
+                                val text = PDFTextStripper().getText(doc)
+                                if (text.isNullOrBlank()) {
+                                    println("Warning: Extracted text is empty or null")
+                                }
+                                userResume = text.trim()
+                                println("Successfully extracted ${userResume.length} characters")
+                            }
                         }
+                    } catch (e: Exception) {
+                        println("Error during PDF upload: ${e.message}")
+                        e.printStackTrace()
                     }
                 }, modifier = Modifier.padding(top = 4.dp)) {
                     Text("Upload PDF for Your Resume")
