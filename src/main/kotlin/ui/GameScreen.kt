@@ -15,13 +15,14 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.layout.ContentScale
 import game.PlayerAction
 import models.GamePhase
 import models.GameState
 import models.SkillCard
 
 @Composable
-fun GameScreen(gameState: GameState, onHumanAction: (PlayerAction) -> Unit, onShowLog: () -> Unit) {
+fun GameScreen(gameState: GameState, onHumanAction: (PlayerAction) -> Unit) {
     val phaseLabel = when (gameState.phase) {
         GamePhase.PRE_FLOP -> "Pre-Interview: Check your skills"
         GamePhase.FLOP -> "Tech Screen: The Flop"
@@ -47,7 +48,8 @@ fun GameScreen(gameState: GameState, onHumanAction: (PlayerAction) -> Unit, onSh
             Image(
                 painter = backgroundPainter,
                 contentDescription = null,
-                modifier = Modifier.fillMaxSize()
+                modifier = Modifier.fillMaxSize(),
+                contentScale = ContentScale.Crop
             )
         } else {
             Box(modifier = Modifier.fillMaxSize().background(Color(0xFF35654D)))
@@ -63,9 +65,9 @@ fun GameScreen(gameState: GameState, onHumanAction: (PlayerAction) -> Unit, onSh
             // Phase and Pot Info
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                 Text(phaseLabel, style = MaterialTheme.typography.h5, color = Color.White)
-                TextButton(onClick = onShowLog) {
-                    Text("Log", color = Color.White)
-                }
+                // TextButton(onClick = onShowLog) {
+                //     Text("Log", color = Color.White)
+                // }
             }
             Text("Pot: ${gameState.pot} | Round: ${gameState.round}/10", color = Color.White, style = MaterialTheme.typography.h6)
 
