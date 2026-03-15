@@ -13,6 +13,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
 import androidx.compose.ui.window.rememberWindowState
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.platform.Font
+import androidx.compose.material.Typography
 import api.GeminiClient
 import game.GameEngine
 import kotlinx.coroutines.launch
@@ -40,7 +43,12 @@ fun main() = application {
             } else false
         }
     ) {
-        MaterialTheme {
+        val customFontFamily = FontFamily(
+            Font("font/KyivMachine-nR0aM.ttf")
+        )
+        val customTypography = Typography(defaultFontFamily = customFontFamily)
+        
+        MaterialTheme(typography = customTypography) {
             val scope = rememberCoroutineScope()
             val gameEngine = remember { GameEngine(scope) }
             val gameState by gameEngine.gameState.collectAsState()

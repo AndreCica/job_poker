@@ -201,6 +201,14 @@ class GameEngine(private val coroutineScope: CoroutineScope) {
             communityCardsRevealed = cardsRevealed,
             currentUserIndex = 0
         )
+
+        // If the human player has folded, auto-skip their turn
+        if (currentPlayers.isNotEmpty() && currentPlayers[0].hasFolded) {
+            gameState.value = gameState.value.copy(currentUserIndex = -1)
+            coroutineScope.launch {
+                processNpcTurns()
+            }
+        }
     }
 
     private fun endRound(defaultWinner: Player? = null) {
