@@ -226,7 +226,9 @@ class GameEngine(private val coroutineScope: CoroutineScope) {
         val state = gameState.value
         val currentPlayers = state.players.filter { it.chips > 0 }
         
-        if (deck.size < 5 || currentPlayers.count { it.isHuman } == 0 || currentPlayers.size <= 1) {
+        // Check for 10-round limit or not enough players
+        if (state.round >= 10 || currentPlayers.count { it.isHuman } == 0 || currentPlayers.size <= 1) {
+            val response = fullResponse ?: return // ensure we have our original response to potentially grab data, but transition to game over
             gameState.value = state.copy(phase = GamePhase.GAME_OVER)
             return
         }
@@ -245,8 +247,25 @@ class GameEngine(private val coroutineScope: CoroutineScope) {
             
             val shuffledPool = pool.shuffled()
             val cards = shuffledPool.take(2)
-            player.copy(hasFolded = false, currentBet = 0, holeCards = cards)
+            // Need to match exactly by Original Player Name mapped to static index, 
+            // but the original indices might drift if players get eliminated! 
+            // So we instead look up by the name to pull the correct resume from the dict.
+            val assignedPool = when {
+                player.name == "You" -> response.resumeCards["player0"]
+                player.name.contains("Chad") -> response.resumeCards["player1"]
+                player.name.contains("Priya") -> response.resumeCards["player2"]
+                player.name.contains("Kevin") -> response.resumeCards["player3"]
+                else -> emptyList()
+            } ?: emptyList()
+            val specificShuffled = assignedPool.shuffled()
+            val specificCards = specificShuffled.take(2)
+            player.copy(hasFolded = false, currentBet = 0, holeCards = specificCards)
         }
+
+        // Reshuffle the full job deck afresh
+        val freshJobDeck = response.jobCards.toMutableList()
+        freshJobDeck.shuffle()
+        deck = freshJobDeck
 
         val initialCommunity = deck.take(2)
         deck = deck.drop(2)

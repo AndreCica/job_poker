@@ -5,6 +5,10 @@ import androidx.compose.material.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.paint
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import javax.swing.JFileChooser
 import javax.swing.filechooser.FileNameExtensionFilter
@@ -13,7 +17,9 @@ import org.apache.pdfbox.text.PDFTextStripper
 
 @Composable
 fun LobbyScreen(onStartGame: (String, String, List<String>) -> Unit) {
-    var jobDescription by remember { mutableStateOf("""
+    var jobDescription by remember {
+        mutableStateOf(
+                """
 Role: Senior Project Manager
 
 Location: Remote / Hybrid
@@ -43,102 +49,128 @@ Bachelor’s degree in Business, Engineering, or a related field.
 PMP or PRINCE2 certification is highly preferred.
 
 Strong familiarity with Agile and Waterfall methodologies.
-""" ) }
+"""
+        )
+    }
     var userResume by remember { mutableStateOf("") }
-    var npc1Resume by remember { mutableStateOf("Overconfident backend dev who thinks they know it all.") }
-    var npc2Resume by remember { mutableStateOf("Methodical architect who over-engineers everything.") }
-    var npc3Resume by remember { mutableStateOf("Desperate junior developer willing to do anything.") }
+    var npc1Resume by remember {
+        mutableStateOf("Overconfident backend dev who thinks they know it all.")
+    }
+    var npc2Resume by remember {
+        mutableStateOf("Methodical architect who over-engineers everything.")
+    }
+    var npc3Resume by remember {
+        mutableStateOf("Desperate junior developer willing to do anything.")
+    }
     var isLoading by remember { mutableStateOf(false) }
 
     Column(
-        modifier = Modifier.padding(16.dp).fillMaxSize(),
-        horizontalAlignment = Alignment.CenterHorizontally
+            modifier =
+                    Modifier.fillMaxSize()
+                            .paint(
+                                    painter = painterResource("lobby_background_1.png"),
+                                    contentScale = ContentScale.Crop
+                            )
+                            .padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text("The Interview Table", style = MaterialTheme.typography.h4)
+        Text("The Interview Table", color = Color.White, style = MaterialTheme.typography.h4)
         Spacer(modifier = Modifier.height(16.dp))
 
         Row(modifier = Modifier.fillMaxWidth().weight(1f)) {
             Column(modifier = Modifier.weight(1f).padding(8.dp)) {
-                OutlinedTextField(
-                    value = jobDescription,
-                    onValueChange = { jobDescription = it },
-                    label = {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text("Job Description")
-                            Text(" *", color = MaterialTheme.colors.error)
-                        }
-                    },
-                    isError = jobDescription.isBlank(),
-                    modifier = Modifier.fillMaxWidth().weight(1f)
+                StyledTextField(
+                        value = jobDescription,
+                        onValueChange = { jobDescription = it },
+                        label = {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text("Job Description")
+                                Text(" *", color = MaterialTheme.colors.error)
+                            }
+                        },
+                        isError = jobDescription.isBlank(),
+                        modifier = Modifier.fillMaxWidth().weight(1f)
                 )
                 Spacer(modifier = Modifier.height(8.dp))
-                OutlinedTextField(
-                    value = userResume,
-                    onValueChange = { userResume = it },
-                    label = {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text("Your Resume")
-                            Text(" *", color = MaterialTheme.colors.error)
-                        }
-                    },
-                    isError = userResume.isBlank(),
-                    modifier = Modifier.fillMaxWidth().weight(1f)
+                StyledTextField(
+                        value = userResume,
+                        onValueChange = { userResume = it },
+                        label = {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text("Your Resume")
+                                Text(" *", color = MaterialTheme.colors.error)
+                            }
+                        },
+                        isError = userResume.isBlank(),
+                        modifier = Modifier.fillMaxWidth().weight(1f)
                 )
-                Button(onClick = {
-                    try {
-                        val chooser = JFileChooser()
-                        chooser.dialogTitle = "Select Resume PDF"
-                        chooser.fileFilter = FileNameExtensionFilter("PDF Documents", "pdf")
-                        chooser.isAcceptAllFileFilterUsed = false
-                        
-                        val result = chooser.showOpenDialog(null)
-                        val selectedFile = if (result == JFileChooser.APPROVE_OPTION) chooser.selectedFile else null
-                        println("Selected file: ${selectedFile?.absolutePath}")
-                        
-                        if (selectedFile != null) {
-                            if (!selectedFile.exists() || !selectedFile.canRead()) {
-                                println("File exists: ${selectedFile.exists()}, Can read: ${selectedFile.canRead()}")
-                                return@Button
-                            }
-                            
-                            PDDocument.load(selectedFile).use { doc ->
-                                val text = PDFTextStripper().getText(doc)
-                                if (text.isNullOrBlank()) {
-                                    println("Warning: Extracted text is empty or null")
+                Button(
+                        onClick = {
+                            try {
+                                val chooser = JFileChooser()
+                                chooser.dialogTitle = "Select Resume PDF"
+                                chooser.fileFilter = FileNameExtensionFilter("PDF Documents", "pdf")
+                                chooser.isAcceptAllFileFilterUsed = false
+
+                                val result = chooser.showOpenDialog(null)
+                                val selectedFile =
+                                        if (result == JFileChooser.APPROVE_OPTION)
+                                                chooser.selectedFile
+                                        else null
+                                println("Selected file: ${selectedFile?.absolutePath}")
+
+                                if (selectedFile != null) {
+                                    if (!selectedFile.exists() || !selectedFile.canRead()) {
+                                        println(
+                                                "File exists: ${selectedFile.exists()}, Can read: ${selectedFile.canRead()}"
+                                        )
+                                        return@Button
+                                    }
+
+                                    PDDocument.load(selectedFile).use { doc ->
+                                        val text = PDFTextStripper().getText(doc)
+                                        if (text.isNullOrBlank()) {
+                                            println("Warning: Extracted text is empty or null")
+                                        }
+                                        userResume = text.trim()
+                                        println(
+                                                "Successfully extracted ${userResume.length} characters"
+                                        )
+                                    }
                                 }
-                                userResume = text.trim()
-                                println("Successfully extracted ${userResume.length} characters")
+                            } catch (e: Exception) {
+                                println("Error during PDF upload: ${e.message}")
+                                e.printStackTrace()
                             }
-                        }
-                    } catch (e: Exception) {
-                        println("Error during PDF upload: ${e.message}")
-                        e.printStackTrace()
-                    }
-                }, modifier = Modifier.padding(top = 4.dp)) {
-                    Text("Upload PDF for Your Resume")
-                }
+                        },
+                        modifier = Modifier.padding(top = 4.dp)
+                ) { Text("Upload PDF for Your Resume") }
                 if (userResume.isBlank()) {
-                    Text("Required field", color = MaterialTheme.colors.error, style = MaterialTheme.typography.caption)
+                    Text(
+                            "Required field",
+                            color = MaterialTheme.colors.error,
+                            style = MaterialTheme.typography.caption
+                    )
                 }
             }
             Column(modifier = Modifier.weight(1f).padding(8.dp)) {
-                OutlinedTextField(
-                    value = npc1Resume,
-                    onValueChange = { npc1Resume = it },
-                    label = { Text("Chad's Resume") },
-                    modifier = Modifier.fillMaxWidth().weight(1f)
+                StyledTextField(
+                        value = npc1Resume,
+                        onValueChange = { npc1Resume = it },
+                        label = { Text("Chad's Resume") },
+                        modifier = Modifier.fillMaxWidth().weight(1f)
                 )
-                OutlinedTextField(
-                    value = npc2Resume,
-                    onValueChange = { npc2Resume = it },
-                    label = { Text("Priya's Resume") },
-                    modifier = Modifier.fillMaxWidth().weight(1f)
+                StyledTextField(
+                        value = npc2Resume,
+                        onValueChange = { npc2Resume = it },
+                        label = { Text("Priya's Resume") },
+                        modifier = Modifier.fillMaxWidth().weight(1f)
                 )
-                OutlinedTextField(
-                    value = npc3Resume,
-                    onValueChange = { npc3Resume = it },
-                    label = { Text("Kevin's Resume") },
-                    modifier = Modifier.fillMaxWidth().weight(1f)
+                StyledTextField(
+                        value = npc3Resume,
+                        onValueChange = { npc3Resume = it },
+                        label = { Text("Kevin's Resume") },
+                        modifier = Modifier.fillMaxWidth().weight(1f)
                 )
             }
         }
@@ -147,20 +179,59 @@ Strong familiarity with Agile and Waterfall methodologies.
 
         val canStart = jobDescription.isNotBlank() && userResume.isNotBlank() && !isLoading
         Button(
-            onClick = {
-                isLoading = true
-                onStartGame(jobDescription, userResume, listOf(npc1Resume, npc2Resume, npc3Resume))
-            },
-            enabled = canStart,
-            modifier = Modifier.fillMaxWidth()
+                onClick = {
+                    isLoading = true
+                    onStartGame(
+                            jobDescription,
+                            userResume,
+                            listOf(npc1Resume, npc2Resume, npc3Resume)
+                    )
+                },
+                enabled = canStart,
+                modifier = Modifier.fillMaxWidth()
         ) {
             if (isLoading) {
-                CircularProgressIndicator(modifier = Modifier.size(24.dp), color = MaterialTheme.colors.onPrimary)
+                CircularProgressIndicator(
+                        modifier = Modifier.size(24.dp),
+                        color = MaterialTheme.colors.onPrimary
+                )
                 Spacer(modifier = Modifier.width(8.dp))
                 Text("Generating Deck & Dealing...")
             } else {
                 Text("Start Interview")
             }
         }
+    }
+}
+
+@Composable
+fun StyledTextField(
+        value: String,
+        onValueChange: (String) -> Unit,
+        label: @Composable () -> Unit,
+        modifier: Modifier = Modifier,
+        isError: Boolean = false
+) {
+    Box(
+            modifier =
+                    modifier.paint(
+                            painter = painterResource("square.png"),
+                            contentScale = ContentScale.FillBounds
+                    )
+    ) {
+        OutlinedTextField(
+                value = value,
+                onValueChange = onValueChange,
+                label = label,
+                isError = isError,
+                modifier = Modifier.fillMaxSize().padding(horizontal = 24.dp, vertical = 12.dp),
+                colors =
+                        TextFieldDefaults.outlinedTextFieldColors(
+                                backgroundColor = Color.Transparent,
+                                unfocusedBorderColor = Color.Transparent,
+                                focusedBorderColor = Color.Transparent,
+                                errorBorderColor = Color.Transparent
+                        )
+        )
     }
 }

@@ -8,6 +8,7 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsHoveredAsState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -16,17 +17,19 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.compose.foundation.text.BasicTextField
 import game.PlayerAction
 import models.GamePhase
 import models.GameState
 import models.SkillCard
 
 @Composable
-fun GameScreen(gameState: GameState, onHumanAction: (PlayerAction, Int) -> Unit, onShowLog: () -> Unit) {
+fun GameScreen(
+        gameState: GameState,
+        onHumanAction: (PlayerAction, Int) -> Unit,
+        onShowLog: () -> Unit
+) {
     val phaseLabel =
             when (gameState.phase) {
                 GamePhase.PRE_FLOP -> "Pre-Interview: Check your skills"
@@ -45,8 +48,7 @@ fun GameScreen(gameState: GameState, onHumanAction: (PlayerAction, Int) -> Unit,
 
     Box(modifier = Modifier.fillMaxSize()) {
         // Background image with fallback
-        val backgroundPainter =
-                runCatching { painterResource("game_background_1.png") }.getOrNull()
+        val backgroundPainter = runCatching { painterResource("game_background_1.png") }.getOrNull()
 
         if (backgroundPainter != null) {
             Image(
@@ -143,9 +145,9 @@ fun GameScreen(gameState: GameState, onHumanAction: (PlayerAction, Int) -> Unit,
                         cardHeight = npcCardH
                 )
                 Spacer(modifier = Modifier.height(16.dp))
-                
+
                 var betInput by remember { mutableStateOf("100") }
-                
+
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Button(
                             onClick = { onHumanAction(PlayerAction.FOLD, 0) },
@@ -160,24 +162,24 @@ fun GameScreen(gameState: GameState, onHumanAction: (PlayerAction, Int) -> Unit,
                     BasicTextField(
                             value = betInput,
                             onValueChange = { betInput = it.filter { char -> char.isDigit() } },
-                            modifier = Modifier
-                                .width(100.dp)
-                                .height(36.dp)
-                                .background(Color.White, RoundedCornerShape(4.dp))
-                                .padding(horizontal = 8.dp, vertical = 8.dp),
+                            modifier =
+                                    Modifier.width(100.dp)
+                                            .height(36.dp)
+                                            .background(Color.White, RoundedCornerShape(4.dp))
+                                            .padding(horizontal = 8.dp, vertical = 8.dp),
                             singleLine = true,
                             textStyle = MaterialTheme.typography.button.copy(color = Color.Black)
                     )
                     Spacer(modifier = Modifier.width(4.dp))
                     Button(
-                            onClick = { 
+                            onClick = {
                                 val amount = betInput.toIntOrNull() ?: 0
                                 if (amount > 0 && human.chips >= amount) {
-                                    onHumanAction(PlayerAction.BET, amount) 
+                                    onHumanAction(PlayerAction.BET, amount)
                                 }
                             },
                             enabled = isHumanTurn && !human.hasFolded && human.chips > 0
-                    ) { Text("Bet") }
+                    ) { Text("Bet", color = Color.Red) }
                 }
             }
         }
@@ -255,41 +257,60 @@ fun PlayingCard(
     val borderWidth = if (isActive) 4.dp else 1.dp
 
     androidx.compose.foundation.TooltipArea(
-        tooltip = {
-            Surface(
-                modifier = Modifier.widthIn(max = 200.dp),
-                elevation = 4.dp,
-                shape = RoundedCornerShape(8.dp),
-                color = Color(0xFF2E4053)
-            ) {
-                Column(modifier = Modifier.padding(8.dp)) {
-                    Text(card.title, style = MaterialTheme.typography.subtitle2, color = Color.White)
-                    Text("Suit: ${card.suit}", style = MaterialTheme.typography.caption, color = Color.LightGray)
-                    Text("Rank: ${card.rank}", style = MaterialTheme.typography.caption, color = Color.LightGray)
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(card.description, style = MaterialTheme.typography.caption, color = Color.White)
+            tooltip = {
+                Surface(
+                        modifier = Modifier.widthIn(max = 200.dp),
+                        elevation = 4.dp,
+                        shape = RoundedCornerShape(8.dp),
+                        color = Color(0xFF2E4053)
+                ) {
+                    Column(modifier = Modifier.padding(8.dp)) {
+                        Text(
+                                card.title,
+                                style = MaterialTheme.typography.subtitle2,
+                                color = Color.White
+                        )
+                        Text(
+                                "Suit: ${card.suit}",
+                                style = MaterialTheme.typography.caption,
+                                color = Color.LightGray
+                        )
+                        Text(
+                                "Rank: ${card.rank}",
+                                style = MaterialTheme.typography.caption,
+                                color = Color.LightGray
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                                card.description,
+                                style = MaterialTheme.typography.caption,
+                                color = Color.White
+                        )
+                    }
                 }
             }
-        }
     ) {
-        val suitImageName = when (kotlin.math.abs(card.suit.hashCode()) % 4) {
-            0 -> "suit_clubs.png"
-            1 -> "suit_diamonds.png"
-            2 -> "suit_hearts.png"
-            3 -> "suit_spades.png"
-            else -> "suit_clubs.png"
-        }
+        val suitImageName =
+                when (kotlin.math.abs(card.suit.hashCode()) % 4) {
+                    0 -> "suit_clubs.png"
+                    1 -> "suit_diamonds.png"
+                    2 -> "suit_hearts.png"
+                    3 -> "suit_spades.png"
+                    else -> "suit_clubs.png"
+                }
         val suitPainter = runCatching { painterResource(suitImageName) }.getOrNull()
 
         if (isPlayerCard && suitPainter != null) {
-            val cardModifier = modifier.padding(2.dp).then(
-                Modifier // Removed border for active player sprite cards
-            )
+            val cardModifier =
+                    modifier.padding(2.dp)
+                            .then(
+                                    Modifier // Removed border for active player sprite cards
+                            )
             Image(
-                painter = suitPainter,
-                contentDescription = card.suit,
-                modifier = cardModifier,
-                contentScale = ContentScale.Fit
+                    painter = suitPainter,
+                    contentDescription = card.suit,
+                    modifier = cardModifier,
+                    contentScale = ContentScale.Fit
             )
         } else {
             Surface(
