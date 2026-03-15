@@ -192,8 +192,8 @@ fun PlayerSection(
         hasFolded: Boolean,
         cards: List<SkillCard?>,
         isActive: Boolean = false,
-        cardWidth: Dp = 60.dp,
-        cardHeight: Dp = 90.dp
+        cardWidth: Dp = 100.dp,
+        cardHeight: Dp = 150.dp
 ) {
     Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(4.dp)) {
         Text(
@@ -283,7 +283,7 @@ fun PlayingCard(
 
         if (isPlayerCard && suitPainter != null) {
             val cardModifier = modifier.padding(2.dp).then(
-                if (isActive) Modifier.border(borderWidth, borderColor, RoundedCornerShape(8.dp)) else Modifier
+                Modifier // Removed border for active player sprite cards
             )
             Image(
                 painter = suitPainter,
