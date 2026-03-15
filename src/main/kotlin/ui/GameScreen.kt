@@ -28,7 +28,9 @@ import models.SkillCard
 fun GameScreen(
         gameState: GameState,
         onHumanAction: (PlayerAction, Int) -> Unit,
-        onShowLog: () -> Unit
+        onShowLog: () -> Unit,
+        onShowPoints: () -> Unit,
+        onShowSuits: () -> Unit
 ) {
     val phaseLabel =
             when (gameState.phase) {
@@ -48,7 +50,7 @@ fun GameScreen(
 
     Box(modifier = Modifier.fillMaxSize()) {
         // Background image with fallback
-        val backgroundPainter = runCatching { painterResource("game_background_1.png") }.getOrNull()
+        val backgroundPainter = runCatching { painterResource("game_background_3.png") }.getOrNull()
 
         if (backgroundPainter != null) {
             Image(
@@ -59,6 +61,54 @@ fun GameScreen(
             )
         } else {
             Box(modifier = Modifier.fillMaxSize().background(Color(0xFF35654D)))
+        }
+
+        // Suits Info Sticker (Top Left)
+        val suitsPainter = runCatching { painterResource("suits.png") }.getOrNull()
+        if (suitsPainter != null) {
+            val interactionSource = remember { MutableInteractionSource() }
+            val isHovered by interactionSource.collectIsHoveredAsState()
+            val suitsAlpha = if (isHovered) 0.8f else 1.0f
+            Image(
+                painter = suitsPainter,
+                contentDescription = "Suits Information",
+                modifier = Modifier
+                    .align(Alignment.TopStart)
+                    .padding(top = 47.dp)
+                    .offset(x = (-5).dp) // Adjust based on visual alignment
+                    .size(300.dp, 200.dp) // Adjust size as needed
+                    .alpha(suitsAlpha)
+                    .clickable(
+                        interactionSource = interactionSource,
+                        indication = null,
+                        onClick = onShowSuits
+                    ),
+                contentScale = ContentScale.Fit
+            )
+        }
+
+        // Points Info Sticker (Top Right)
+        val pointsPainter = runCatching { painterResource("points.png") }.getOrNull()
+        if (pointsPainter != null) {
+            val interactionSource = remember { MutableInteractionSource() }
+            val isHovered by interactionSource.collectIsHoveredAsState()
+            val pointsAlpha = if (isHovered) 0.8f else 1.0f
+            Image(
+                painter = pointsPainter,
+                contentDescription = "Points Information",
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(top = 47.dp)
+                    .offset(x = 5.dp) // Adjust based on visual alignment
+                    .size(300.dp, 200.dp) // Adjust size as needed
+                    .alpha(pointsAlpha)
+                    .clickable(
+                        interactionSource = interactionSource,
+                        indication = null,
+                        onClick = onShowPoints
+                    ),
+                contentScale = ContentScale.Fit
+            )
         }
 
         Column(

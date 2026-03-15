@@ -23,6 +23,8 @@ import ui.LobbyScreen
 import ui.LogScreen
 import ui.ShowdownScreen
 import ui.TitleScreen
+import ui.PointsInfoScreen
+import ui.SuitsInfoScreen
 
 fun main() = application {
     val windowState = rememberWindowState(size = DpSize(1280.dp, 720.dp))
@@ -46,6 +48,8 @@ fun main() = application {
             val gameState by gameEngine.gameState.collectAsState()
             val apiClient = remember { GeminiClient() }
             var showLogWindow by remember { mutableStateOf(false) }
+            var showPointsInfo by remember { mutableStateOf(false) }
+            var showSuitsInfo by remember { mutableStateOf(false) }
 
             when (gameState.phase) {
                 GamePhase.TITLE -> {
@@ -100,12 +104,20 @@ fun main() = application {
                     GameScreen(
                         gameState = gameState,
                         onHumanAction = { action, betAmount -> gameEngine.humanAction(action, betAmount) },
-                        onShowLog = { showLogWindow = true }
+                        onShowLog = { showLogWindow = true },
+                        onShowPoints = { showPointsInfo = true },
+                        onShowSuits = { showSuitsInfo = true }
                     )
                 }
             }
             if (showLogWindow) {
                 LogScreen(logs = gameState.logs, onClose = { showLogWindow = false })
+            }
+            if (showPointsInfo) {
+                PointsInfoScreen(onClose = { showPointsInfo = false })
+            }
+            if (showSuitsInfo) {
+                SuitsInfoScreen(onClose = { showSuitsInfo = false })
             }
 
             if (isPaused) {
