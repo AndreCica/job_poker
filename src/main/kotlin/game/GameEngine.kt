@@ -27,28 +27,17 @@ class GameEngine(private val coroutineScope: CoroutineScope) {
 
     fun startGame(players: List<Player>, response: GeminiResponse) {
         fullResponse = response
-        val jobDeck = response.jobCards.toMutableList()
-        jobDeck.shuffle()
-        
-        val dealtPlayers = players.mapIndexed { index, player ->
-            val pool = when (index) {
-                0 -> response.resumeCards["player0"]
-                1 -> response.resumeCards["player1"]
-                2 -> response.resumeCards["player2"]
-                3 -> response.resumeCards["player3"]
-                else -> emptyList()
-            } ?: emptyList()
-            
-            val shuffledPool = pool.shuffled()
-            val cards = shuffledPool.take(2)
-            player.copy(holeCards = cards, hasFolded = false, currentBet = 0)
-        }
-        
-        deck = jobDeck
+        val shuffledDeck = response.jobCards.shuffled().toMutableList()
 
-        // Deal 2 community cards face-up at game start
-        val initialCommunity = deck.take(2)
-        deck = deck.drop(2)
+        val dealtPlayers = players.map { player ->
+            val holeCards = shuffledDeck.take(2)
+            shuffledDeck.removeAll(holeCards)
+            player.copy(holeCards = holeCards, hasFolded = false, currentBet = 0)
+        }
+
+        val initialCommunity = shuffledDeck.take(2)
+        shuffledDeck.removeAll(initialCommunity)
+        deck = shuffledDeck
 
         gameState.value = GameState(
             players = dealtPlayers,
@@ -201,6 +190,14 @@ class GameEngine(private val coroutineScope: CoroutineScope) {
             communityCardsRevealed = cardsRevealed,
             currentUserIndex = 0
         )
+
+        // If the human player has folded, auto-skip their turn
+        if (currentPlayers.isNotEmpty() && currentPlayers[0].hasFolded) {
+            gameState.value = gameState.value.copy(currentUserIndex = -1)
+            coroutineScope.launch {
+                processNpcTurns()
+            }
+        }
     }
 
     private fun endRound(defaultWinner: Player? = null) {
@@ -224,51 +221,28 @@ class GameEngine(private val coroutineScope: CoroutineScope) {
 
     fun nextRound() {
         val state = gameState.value
-        val currentPlayers = state.players.filter { it.chips > 0 }
+        val playingPlayers = state.players.filter { it.chips > 0 }
         
         // Check for 10-round limit or not enough players
-        if (state.round >= 10 || currentPlayers.count { it.isHuman } == 0 || currentPlayers.size <= 1) {
-            val response = fullResponse ?: return // ensure we have our original response to potentially grab data, but transition to game over
+        if (state.round >= 10 || playingPlayers.count { it.isHuman } == 0 || playingPlayers.size <= 1) {
+            val response = fullResponse ?: return
             gameState.value = state.copy(phase = GamePhase.GAME_OVER)
             return
         }
-        
+
         val response = fullResponse ?: return
-        
-        // Reset for next round
-        val resetPlayers = currentPlayers.mapIndexed { index, player -> 
-            val pool = when (index) {
-                0 -> response.resumeCards["player0"]
-                1 -> response.resumeCards["player1"]
-                2 -> response.resumeCards["player2"]
-                3 -> response.resumeCards["player3"]
-                else -> emptyList()
-            } ?: emptyList()
-            
-            val shuffledPool = pool.shuffled()
-            val cards = shuffledPool.take(2)
-            // Need to match exactly by Original Player Name mapped to static index, 
-            // but the original indices might drift if players get eliminated! 
-            // So we instead look up by the name to pull the correct resume from the dict.
-            val assignedPool = when {
-                player.name == "You" -> response.resumeCards["player0"]
-                player.name.contains("Chad") -> response.resumeCards["player1"]
-                player.name.contains("Priya") -> response.resumeCards["player2"]
-                player.name.contains("Kevin") -> response.resumeCards["player3"]
-                else -> emptyList()
-            } ?: emptyList()
-            val specificShuffled = assignedPool.shuffled()
-            val specificCards = specificShuffled.take(2)
-            player.copy(hasFolded = false, currentBet = 0, holeCards = specificCards)
+
+        // Reshuffle full deck and deal new cards to all active players
+        val shuffledDeck = response.jobCards.shuffled().toMutableList()
+        val resetPlayers = playingPlayers.map { player ->
+            val holeCards = shuffledDeck.take(2)
+            shuffledDeck.removeAll(holeCards)
+            player.copy(holeCards = holeCards, hasFolded = false, currentBet = 0)
         }
 
-        // Reshuffle the full job deck afresh
-        val freshJobDeck = response.jobCards.toMutableList()
-        freshJobDeck.shuffle()
-        deck = freshJobDeck
-
-        val initialCommunity = deck.take(2)
-        deck = deck.drop(2)
+        val initialCommunity = shuffledDeck.take(2)
+        shuffledDeck.removeAll(initialCommunity)
+        deck = shuffledDeck
 
         gameState.value = state.copy(
             players = resetPlayers,
@@ -279,8 +253,8 @@ class GameEngine(private val coroutineScope: CoroutineScope) {
             phase = GamePhase.PRE_FLOP,
             currentUserIndex = 0,
             logs = state.logs + listOf(
-                "Starting Round ${state.round + 1}", 
-                "Dealing hole cards.", 
+                "Starting Round ${state.round + 1}",
+                "Dealing hole cards.",
                 "Community cards: ${initialCommunity.joinToString { it.title }}"
             )
         )

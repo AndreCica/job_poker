@@ -349,35 +349,57 @@ fun PlayingCard(
                     else -> "suit_clubs.png"
                 }
         val suitPainter = runCatching { painterResource(suitImageName) }.getOrNull()
+        val normalizedSuit = card.suit.trim().lowercase()
+        val suitColor = when {
+            normalizedSuit.startsWith("operation") -> Color(0xFFF0C807)
+            normalizedSuit.startsWith("management") -> Color(0xFFFF0000)
+            normalizedSuit.startsWith("design") -> Color(0xFF800080)
+            normalizedSuit.startsWith("engineering") -> Color(0xFF00B496)
+            else -> Color(0xFF1E3A8A)
+        }
 
         if (isPlayerCard && suitPainter != null) {
-            val cardModifier =
-                    modifier.padding(2.dp)
-                            .then(
-                                    Modifier // Removed border for active player sprite cards
-                            )
-            Image(
-                    painter = suitPainter,
-                    contentDescription = card.suit,
-                    modifier = cardModifier,
-                    contentScale = ContentScale.Fit
-            )
+            Box(modifier = modifier.padding(2.dp)) {
+                Surface(
+                        shape = RoundedCornerShape(8.dp),
+                        color = suitColor,
+                        modifier = Modifier.fillMaxSize()
+                ) {
+                    Box(modifier = Modifier.fillMaxSize()) {
+                        Image(
+                                painter = suitPainter,
+                                contentDescription = card.suit,
+                                modifier = Modifier.fillMaxSize(),
+                                contentScale = ContentScale.Crop
+                        )
+                        Text(
+                                text = "${card.rank}",
+                                color = Color.White,
+                                style = MaterialTheme.typography.h4,
+                                modifier = Modifier
+                                        .align(Alignment.Center)
+                                        .background(Color.Black.copy(alpha = 0.45f), RoundedCornerShape(4.dp))
+                                        .padding(horizontal = 6.dp, vertical = 2.dp)
+                        )
+                    }
+                }
+            }
         } else {
             Surface(
                     modifier =
                             modifier.padding(2.dp)
                                     .border(borderWidth, borderColor, RoundedCornerShape(8.dp)),
                     shape = RoundedCornerShape(8.dp),
-                    color = Color.White
+                    color = suitColor
             ) {
                 Column(
                         modifier = Modifier.padding(4.dp).fillMaxSize(),
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.Center
                 ) {
-                    Text("${card.rank}", style = MaterialTheme.typography.h6)
+                    Text("${card.rank}", style = MaterialTheme.typography.h6, color = Color.White)
                     Spacer(modifier = Modifier.height(4.dp))
-                    Text(card.suit.take(3).uppercase(), style = MaterialTheme.typography.subtitle1)
+                    Text(card.suit.take(3).uppercase(), style = MaterialTheme.typography.subtitle1, color = Color.White)
                 }
             }
         }
