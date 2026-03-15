@@ -106,6 +106,8 @@ class GeminiClient {
             
             Convert the bullet points of the job requirements into 4 thematic suits (Engineering, Design, Management, Operations) and 5 levels of their ranks (1-5).
             The description and title of the 20 cards in the deck should be named and described strictly based on these job requirements.
+            For the card's "description" field, please provide a short summary excerpt of the specific job requirement bullet point that was used to create the card.
+
             If the resume is not an appropriate format, then randomly generate 20 cards with random suits and ranks.
             
             Then, convert the skills and bullet points from each candidate's resume into cards.
@@ -113,14 +115,15 @@ class GeminiClient {
             Generate exactly 5 cards based on RESUME_2 and store them in resumeCards under "player1".
             Generate exactly 5 cards based on RESUME_3 and store them in resumeCards under "player2".
             Generate exactly 5 cards based on RESUME_4 and store them in resumeCards under "player3".
+            Again, for the "description" field of these resume cards, please provide a short summary excerpt of the specific resume bullet point/skill that was used to create the card.
 
             If the resume is not an appropriate format, then randomly generate 20 cards with random suits and ranks.
             
             Respond ONLY with a JSON object (no markdown) in this exact schema:
             {
-              "jobCards": [{"suit":"SuitName1","rank":1,"title":"Card Title","description":"One sentence skill"}],  
+              "jobCards": [{"suit":"SuitName1","rank":1,"title":"Card Title","description":"Summary excerpt of the bullet point used"}],  
               "resumeCards": {
-                "player0": [{"suit":"SuitName1","rank":1,"title":"Card Title","description":"One sentence skill"}],
+                "player0": [{"suit":"SuitName1","rank":1,"title":"Card Title","description":"Summary excerpt of the bullet point used"}],
                 "player1": [],
                 "player2": [],
                 "player3": []
