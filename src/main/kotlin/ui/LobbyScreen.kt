@@ -177,7 +177,16 @@ Strong familiarity with Agile and Waterfall methodologies.
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        val canStart = jobDescription.isNotBlank() && userResume.isNotBlank() && !isLoading
+        val resumeIsValid = isResumeValid(userResume)
+        val canStart = jobDescription.isNotBlank() && resumeIsValid && !isLoading
+        if (userResume.isNotBlank() && !resumeIsValid) {
+            Text(
+                    "Please enter a valid resume (not random letters).",
+                    color = MaterialTheme.colors.error,
+                    style = MaterialTheme.typography.caption,
+                    modifier = Modifier.padding(bottom = 8.dp)
+            )
+        }
         Button(
                 onClick = {
                     isLoading = true
@@ -202,6 +211,20 @@ Strong familiarity with Agile and Waterfall methodologies.
             }
         }
     }
+}
+
+fun isResumeValid(resume: String): Boolean {
+    val cleaned = resume.trim()
+    if (cleaned.length < 40) return false
+    val words = cleaned.split("\\s+".toRegex()).filter { it.isNotBlank() }
+    if (words.size < 7) return false
+    val letters = cleaned.count { it.isLetter() }
+    if (letters < cleaned.length * 0.5) return false
+    val uniqueLetters = cleaned.filter { it.isLetterOrDigit() }.toSet().size
+    if (uniqueLetters < 10) return false
+    if (Regex("([a-zA-Z])\\1{4,}").containsMatchIn(cleaned)) return false
+    if (Regex("[A-Z][a-z]+ [A-Z][a-z]+ [A-Z][a-z]+").containsMatchIn(cleaned)) return true
+    return words.any { it.length > 4 }
 }
 
 @Composable
