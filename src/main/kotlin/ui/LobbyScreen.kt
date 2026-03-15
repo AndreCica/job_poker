@@ -5,6 +5,10 @@ import androidx.compose.material.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.paint
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import javax.swing.JFileChooser
 import javax.swing.filechooser.FileNameExtensionFilter
@@ -51,7 +55,13 @@ Strong familiarity with Agile and Waterfall methodologies.
     var isLoading by remember { mutableStateOf(false) }
 
     Column(
-        modifier = Modifier.padding(16.dp).fillMaxSize(),
+        modifier = Modifier
+            .fillMaxSize()
+            .paint(
+                painter = painterResource("lobby_background_1.png"),
+                contentScale = ContentScale.Crop
+            )
+            .padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text("The Interview Table", style = MaterialTheme.typography.h4)
@@ -59,7 +69,7 @@ Strong familiarity with Agile and Waterfall methodologies.
 
         Row(modifier = Modifier.fillMaxWidth().weight(1f)) {
             Column(modifier = Modifier.weight(1f).padding(8.dp)) {
-                OutlinedTextField(
+                StyledTextField(
                     value = jobDescription,
                     onValueChange = { jobDescription = it },
                     label = {
@@ -72,7 +82,7 @@ Strong familiarity with Agile and Waterfall methodologies.
                     modifier = Modifier.fillMaxWidth().weight(1f)
                 )
                 Spacer(modifier = Modifier.height(8.dp))
-                OutlinedTextField(
+                StyledTextField(
                     value = userResume,
                     onValueChange = { userResume = it },
                     label = {
@@ -122,19 +132,19 @@ Strong familiarity with Agile and Waterfall methodologies.
                 }
             }
             Column(modifier = Modifier.weight(1f).padding(8.dp)) {
-                OutlinedTextField(
+                StyledTextField(
                     value = npc1Resume,
                     onValueChange = { npc1Resume = it },
                     label = { Text("Chad's Resume") },
                     modifier = Modifier.fillMaxWidth().weight(1f)
                 )
-                OutlinedTextField(
+                StyledTextField(
                     value = npc2Resume,
                     onValueChange = { npc2Resume = it },
                     label = { Text("Priya's Resume") },
                     modifier = Modifier.fillMaxWidth().weight(1f)
                 )
-                OutlinedTextField(
+                StyledTextField(
                     value = npc3Resume,
                     onValueChange = { npc3Resume = it },
                     label = { Text("Kevin's Resume") },
@@ -162,5 +172,35 @@ Strong familiarity with Agile and Waterfall methodologies.
                 Text("Start Interview")
             }
         }
+    }
+}
+
+@Composable
+fun StyledTextField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    label: @Composable () -> Unit,
+    modifier: Modifier = Modifier,
+    isError: Boolean = false
+) {
+    Box(
+        modifier = modifier.paint(
+            painter = painterResource("square.png"),
+            contentScale = ContentScale.FillBounds
+        )
+    ) {
+        OutlinedTextField(
+            value = value,
+            onValueChange = onValueChange,
+            label = label,
+            isError = isError,
+            modifier = Modifier.fillMaxSize().padding(horizontal = 24.dp, vertical = 12.dp),
+            colors = TextFieldDefaults.outlinedTextFieldColors(
+                backgroundColor = Color.Transparent,
+                unfocusedBorderColor = Color.Transparent,
+                focusedBorderColor = Color.Transparent,
+                errorBorderColor = Color.Transparent
+            )
+        )
     }
 }
