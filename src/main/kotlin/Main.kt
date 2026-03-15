@@ -68,7 +68,7 @@ fun main() = application {
                                         Player(name = "Kevin (Desperate)", isHuman = false)
                                     )
                                 }
-                                gameEngine.startGame(playersToUse, response.deck, response.holeCards)
+                                gameEngine.startGame(playersToUse, response)
                             }
                         }
                     )
@@ -81,26 +81,20 @@ fun main() = application {
                     )
                 }
                 GamePhase.GAME_OVER -> {
-                    LobbyScreen(
-                        onStartGame = { jobDescription, userResume, npcResumes ->
-                            scope.launch {
-                                val resumes = listOf(userResume) + npcResumes
-                                val response = apiClient.generateGameData(jobDescription, resumes)
-                                val currentPlayers = gameState.players.filter { it.chips > 0 }
-                                val playersToUse = if (currentPlayers.isNotEmpty() && currentPlayers.any { it.isHuman }) {
-                                    currentPlayers.map { it.copy(hasFolded = false, currentBet = 0, holeCards = emptyList()) }
-                                } else {
-                                    listOf(
-                                        Player(name = "You", isHuman = true),
-                                        Player(name = "Chad (Overconfident)", isHuman = false),
-                                        Player(name = "Priya (Methodical)", isHuman = false),
-                                        Player(name = "Kevin (Desperate)", isHuman = false)
-                                    )
-                                }
-                                gameEngine.startGame(playersToUse, response.deck, response.holeCards)
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            val didWin = gameState.players.find { it.isHuman }?.let { it.chips > 0 } ?: false
+                            Text(
+                                if (didWin) "Game Over - You survived the interview process!" else "Game Over - You were rejected.",
+                                style = MaterialTheme.typography.h3, 
+                                color = if(didWin) Color.Green else Color.Red
+                            )
+                            Spacer(modifier = Modifier.height(32.dp))
+                            Button(onClick = { gameEngine.startFromTitle() }) {
+                                Text("Return to Title")
                             }
                         }
-                    )
+                    }
                 }
                 else -> {
                     GameScreen(

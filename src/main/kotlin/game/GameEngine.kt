@@ -17,6 +17,7 @@ class GameEngine(private val coroutineScope: CoroutineScope) {
     }
     val gameState = MutableStateFlow(GameState(players = emptyList()))
     private var deck: List<SkillCard> = emptyList()
+    private var fullResponse: GeminiResponse? = null
 
     private fun logAction(message: String) {
         val currentLogs = gameState.value.logs.toMutableList()
@@ -24,17 +25,26 @@ class GameEngine(private val coroutineScope: CoroutineScope) {
         gameState.value = gameState.value.copy(logs = currentLogs)
     }
 
-    fun startGame(players: List<Player>, generatedDeck: List<SkillCard>, holeCardsIndices: Map<String, List<Int>>) {
-        deck = generatedDeck.toMutableList()
+    fun startGame(players: List<Player>, response: GeminiResponse) {
+        fullResponse = response
+        val jobDeck = response.jobCards.toMutableList()
+        jobDeck.shuffle()
+        
         val dealtPlayers = players.mapIndexed { index, player ->
-            val indices = holeCardsIndices["player$index"] ?: emptyList()
-            val cards = indices.mapNotNull { i -> deck.getOrNull(i) }
+            val pool = when (index) {
+                0 -> response.resumeCards["player0"]
+                1 -> response.resumeCards["player1"]
+                2 -> response.resumeCards["player2"]
+                3 -> response.resumeCards["player3"]
+                else -> emptyList()
+            } ?: emptyList()
+            
+            val shuffledPool = pool.shuffled()
+            val cards = shuffledPool.take(2)
             player.copy(holeCards = cards, hasFolded = false, currentBet = 0)
         }
         
-        // Remove dealt cards from deck to form community cards later
-        val dealtCards = dealtPlayers.flatMap { it.holeCards }.toSet()
-        deck = deck.filterNot { it in dealtCards }
+        deck = jobDeck
 
         // Deal 2 community cards face-up at game start
         val initialCommunity = deck.take(2)
@@ -113,7 +123,7 @@ class GameEngine(private val coroutineScope: CoroutineScope) {
                 }
                 2 -> { // Bet
                     val maxBet = npc.chips
-                    val betAmount = if (maxBet > 0) Random.nextInt(100, maxBet + 1) else 0
+                    val betAmount = if (maxBet > 100) Random.nextInt(100, maxBet + 1) else if (maxBet > 0) maxBet else 0
                     if (betAmount > 0) {
                         currentPlayers[i] = npc.copy(
                             chips = npc.chips - betAmount,
@@ -214,21 +224,46 @@ class GameEngine(private val coroutineScope: CoroutineScope) {
 
     fun nextRound() {
         val state = gameState.value
-        if (state.round >= 10) {
+        val currentPlayers = state.players.filter { it.chips > 0 }
+        
+        if (deck.size < 5 || currentPlayers.count { it.isHuman } == 0 || currentPlayers.size <= 1) {
             gameState.value = state.copy(phase = GamePhase.GAME_OVER)
             return
         }
         
+        val response = fullResponse ?: return
+        
         // Reset for next round
-        val resetPlayers = state.players.map { it.copy(hasFolded = false, currentBet = 0, holeCards = emptyList()) }
+        val resetPlayers = currentPlayers.mapIndexed { index, player -> 
+            val pool = when (index) {
+                0 -> response.resumeCards["player0"]
+                1 -> response.resumeCards["player1"]
+                2 -> response.resumeCards["player2"]
+                3 -> response.resumeCards["player3"]
+                else -> emptyList()
+            } ?: emptyList()
+            
+            val shuffledPool = pool.shuffled()
+            val cards = shuffledPool.take(2)
+            player.copy(hasFolded = false, currentBet = 0, holeCards = cards)
+        }
+
+        val initialCommunity = deck.take(2)
+        deck = deck.drop(2)
+
         gameState.value = state.copy(
             players = resetPlayers,
-            communityCards = emptyList(),
-            communityCardsRevealed = 0,
+            communityCards = initialCommunity,
+            communityCardsRevealed = 2,
             pot = 0,
             round = state.round + 1,
-            phase = GamePhase.LOBBY,
-            logs = state.logs + "Starting Round ${state.round + 1}"
+            phase = GamePhase.PRE_FLOP,
+            currentUserIndex = 0,
+            logs = state.logs + listOf(
+                "Starting Round ${state.round + 1}", 
+                "Dealing hole cards.", 
+                "Community cards: ${initialCommunity.joinToString { it.title }}"
+            )
         )
     }
 

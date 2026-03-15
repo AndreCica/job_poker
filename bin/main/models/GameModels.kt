@@ -44,7 +44,6 @@ sealed class HandRank(val displayName: String, val value: Int) : Comparable<Hand
 // Needed for the Gemini Response mapping
 @Serializable
 data class GeminiResponse(
-    val suits: List<String>,
-    val deck: List<SkillCard>,
-    val holeCards: Map<String, List<Int>>
+    val jobCards: List<SkillCard>,
+    val resumeCards: Map<String, List<SkillCard>>
 )

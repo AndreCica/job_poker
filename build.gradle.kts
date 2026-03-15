@@ -1,3 +1,5 @@
+val geminiApiKey = project.findProperty("GEMINI_API_KEY") as String? ?: ""
+
 plugins {
     kotlin("jvm") version "1.9.23"
     id("org.jetbrains.compose") version "1.6.1"
@@ -19,6 +21,10 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-swing:1.7.3")
     implementation("org.apache.pdfbox:pdfbox:2.0.30")
+}
+
+tasks.withType<JavaExec>().configureEach {
+    systemProperty("GEMINI_API_KEY", geminiApiKey)
 }
 
 compose.desktop {

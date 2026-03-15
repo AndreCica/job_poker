@@ -61,7 +61,7 @@ Strong familiarity with Agile and Waterfall methodologies.
             Column(modifier = Modifier.weight(1f).padding(8.dp)) {
                 OutlinedTextField(
                     value = jobDescription,
-                    onValueChange = {},
+                    onValueChange = { jobDescription = it },
                     label = {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Text("Job Description")
@@ -69,8 +69,7 @@ Strong familiarity with Agile and Waterfall methodologies.
                         }
                     },
                     isError = jobDescription.isBlank(),
-                    modifier = Modifier.fillMaxWidth().weight(1f),
-                    readOnly = true
+                    modifier = Modifier.fillMaxWidth().weight(1f)
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 OutlinedTextField(
