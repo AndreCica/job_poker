@@ -46,7 +46,7 @@ fun GameScreen(gameState: GameState, onHumanAction: (PlayerAction, Int) -> Unit,
     Box(modifier = Modifier.fillMaxSize()) {
         // Background image with fallback
         val backgroundPainter =
-                runCatching { painterResource("background_room_test.png") }.getOrNull()
+                runCatching { painterResource("game_background_1.png") }.getOrNull()
 
         if (backgroundPainter != null) {
             Image(
@@ -233,7 +233,8 @@ fun PlayerSection(
                         PlayingCard(
                                 card,
                                 modifier = Modifier.size(cardWidth, cardHeight),
-                                isActive = isActive
+                                isActive = isActive,
+                                isPlayerCard = name == "You"
                         )
                     }
                 }
@@ -247,7 +248,8 @@ fun PlayerSection(
 fun PlayingCard(
         card: SkillCard,
         modifier: Modifier = Modifier.size(80.dp, 120.dp),
-        isActive: Boolean = false
+        isActive: Boolean = false,
+        isPlayerCard: Boolean = false
 ) {
     val borderColor = if (isActive) Color(0xFFFFD700) else Color.Black
     val borderWidth = if (isActive) 4.dp else 1.dp
@@ -270,21 +272,42 @@ fun PlayingCard(
             }
         }
     ) {
-        Surface(
-                modifier =
-                        modifier.padding(2.dp)
-                                .border(borderWidth, borderColor, RoundedCornerShape(8.dp)),
-                shape = RoundedCornerShape(8.dp),
-                color = Color.White
-        ) {
-            Column(
-                    modifier = Modifier.padding(4.dp).fillMaxSize(),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
+        val suitImageName = when (kotlin.math.abs(card.suit.hashCode()) % 4) {
+            0 -> "suit_clubs.png"
+            1 -> "suit_diamonds.png"
+            2 -> "suit_hearts.png"
+            3 -> "suit_spades.png"
+            else -> "suit_clubs.png"
+        }
+        val suitPainter = runCatching { painterResource(suitImageName) }.getOrNull()
+
+        if (isPlayerCard && suitPainter != null) {
+            val cardModifier = modifier.padding(2.dp).then(
+                if (isActive) Modifier.border(borderWidth, borderColor, RoundedCornerShape(8.dp)) else Modifier
+            )
+            Image(
+                painter = suitPainter,
+                contentDescription = card.suit,
+                modifier = cardModifier,
+                contentScale = ContentScale.Fit
+            )
+        } else {
+            Surface(
+                    modifier =
+                            modifier.padding(2.dp)
+                                    .border(borderWidth, borderColor, RoundedCornerShape(8.dp)),
+                    shape = RoundedCornerShape(8.dp),
+                    color = Color.White
             ) {
-                Text("${card.rank}", style = MaterialTheme.typography.h6)
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(card.suit.take(3).uppercase(), style = MaterialTheme.typography.subtitle1)
+                Column(
+                        modifier = Modifier.padding(4.dp).fillMaxSize(),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                ) {
+                    Text("${card.rank}", style = MaterialTheme.typography.h6)
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(card.suit.take(3).uppercase(), style = MaterialTheme.typography.subtitle1)
+                }
             }
         }
     }

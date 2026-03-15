@@ -33,6 +33,6 @@ compose.desktop {
     }
 }
 
-if (JavaVersion.current() >= JavaVersion.VERSION_23) {
-    error("This project requires Java 21. Current version: ${JavaVersion.current()}")
+if (JavaVersion.current() < JavaVersion.toVersion("21") || JavaVersion.current().majorVersion.toInt() >= 23) {
+    error("This project requires Java 21 or 22. Current version: ${JavaVersion.current()}")
 }
