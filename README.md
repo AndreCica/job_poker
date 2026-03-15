@@ -1,4 +1,7 @@
-# job_poker
+# Texas Hire'Em
+
+## Description
+A poker-style job interview simulator created for SotonHack 2026.  
 
 ## Prerequisites
 - Java 21 and older (newer versions are not supported!)
@@ -6,7 +9,7 @@
   - Others: https://adoptium.net
 
 ## Build & Run
-To run you go into the project directory:
+To build and run the app, go into the project directory:
 
 /path/to/your/project/directory/
 
