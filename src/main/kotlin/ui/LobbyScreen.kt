@@ -148,8 +148,8 @@ Strong familiarity with Agile and Waterfall methodologies.
                 if (userResume.isBlank()) {
                     Text(
                             "Required field",
-                            color = MaterialTheme.colors.error,
-                            style = MaterialTheme.typography.caption
+                            color = Color.White,
+                            style = MaterialTheme.typography.body2
                     )
                 }
             }
@@ -182,8 +182,8 @@ Strong familiarity with Agile and Waterfall methodologies.
         if (userResume.isNotBlank() && !resumeIsValid) {
             Text(
                     "Please enter a valid resume (not random letters).",
-                    color = MaterialTheme.colors.error,
-                    style = MaterialTheme.typography.caption,
+                    color = Color.White,
+                    style = MaterialTheme.typography.body2,
                     modifier = Modifier.padding(bottom = 8.dp)
             )
         }
